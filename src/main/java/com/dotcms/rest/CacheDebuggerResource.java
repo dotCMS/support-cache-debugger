@@ -127,10 +127,10 @@ public class CacheDebuggerResource  {
 
             for (Permission p: permissionList) {
                 generatedOutput = new JSONObject();
-                generatedOutput.append(p.getInode()+"_PermissionableId",p.getInode());
-                generatedOutput.append(p.getInode()+"_PermissionableType",p.getType());
-                generatedOutput.append(p.getInode()+"_Role/User",roleAPI.loadRoleById(p.getRoleId()).getName());
-                generatedOutput.append(p.getInode()+"_PermissionLevel",p.getPermission());
+                generatedOutput.append(p.getId()+"_PermissionableId",p.getInode());
+                generatedOutput.append(p.getId()+"_PermissionableType",p.getType());
+                generatedOutput.append(p.getId()+"_Role/User",roleAPI.loadRoleById(p.getRoleId()).getName());
+                generatedOutput.append(p.getId()+"_PermissionLevel",p.getPermission());
                 finalOutput.add(generatedOutput);
             }
 
