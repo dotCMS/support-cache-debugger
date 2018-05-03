@@ -93,12 +93,15 @@ public class SupportDebuggerResource  {
 
             finalOutput = generateJSONOutput(occurrenceInIdentifierTable, true);
 
-            ResponseBuilder builder = Response.ok(finalOutput.toString(), "application/json");
+            ResponseBuilder builder = Response.ok(finalOutput.toString(4), "application/json");
             return builder.build();
 
         }
-        String username = (sysUser != null) ? sysUser.getFullName() : " unknown ";
-        ResponseBuilder builder = Response.ok("{\"result\":\"/test/" + username + " GET!\"}", "application/json");
+
+        JSONObject errMsg = new JSONObject();
+        errMsg.append("Nothing to see here", "exactly");
+        errMsg.append("Why?", "The Asset Id passed in is invalid");
+        ResponseBuilder builder = Response.ok(errMsg.toString(4), "application/json");
         return builder.build();
     }
 
@@ -130,12 +133,15 @@ public class SupportDebuggerResource  {
 
             finalOutput = generateJSONOutput(occurrenceInIdentifierTable, false);
 
-            ResponseBuilder builder = Response.ok(finalOutput.toString(), "application/json");
+            ResponseBuilder builder = Response.ok(finalOutput.toString(4), "application/json");
             return builder.build();
 
         }
-        String username = (sysUser != null) ? sysUser.getFullName() : " unknown ";
-        ResponseBuilder builder = Response.ok("{\"result\":\"/test/" + username + " GET!\"}", "application/json");
+
+        JSONObject errMsg = new JSONObject();
+        errMsg.append("Nothing to see here", "exactly");
+        errMsg.append("Why?", "The Asset Id passed in is invalid");
+        ResponseBuilder builder = Response.ok(errMsg.toString(4), "application/json");
         return builder.build();
     }
 
