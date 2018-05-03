@@ -47,8 +47,8 @@ import java.util.List;
 import java.util.Map;
 import javax.servlet.http.HttpServletRequest;
 
-@Path("/cacheDebugger")
-public class CacheDebuggerResource  {
+@Path("/supportDebugger")
+public class SupportDebuggerResource  {
 
     private final ContainerAPI containerAPI = APILocator.getContainerAPI();
     private final ContentletAPI contentletAPI = APILocator.getContentletAPI();
@@ -184,7 +184,7 @@ public class CacheDebuggerResource  {
                 HibernateUtil.startTransaction();
                 contentletAPI.reindex();
                 HibernateUtil.closeAndCommitTransaction();
-                AdminLogger.log(CacheDebuggerResource.class, "runFullReindex", "Running Contentlet Reindex");
+                AdminLogger.log(SupportDebuggerResource.class, "runFullReindex", "Running Contentlet Reindex");
             }
 
             ResponseBuilder builder = Response.ok(finalOutput.toString(4), "application/json");
