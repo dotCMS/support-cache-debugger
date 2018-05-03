@@ -57,7 +57,7 @@ public class CacheDebuggerResource  {
      * along with the place where it should be located
      *
      * @param request
-     * @param cacheKey
+     * @param cacheKey the key/id of asset to look up in cache
      * @return
      * @throws DotStateException
      * @throws DotDataException
@@ -92,7 +92,7 @@ public class CacheDebuggerResource  {
      * if a match is found, it will return its information
      *
      * @param request
-     * @param assetId
+     * @param assetId the asset identifier
      * @return
      * @throws DotStateException
      * @throws DotDataException
@@ -124,7 +124,7 @@ public class CacheDebuggerResource  {
 
 
     /**
-     * Generats the JSONArray which is going to be returned by the REST endpoints
+     * Generates the JSONArray which is going to be returned by the REST endpoints
      * @param occurrenceInIdentifierTable The asset id pulled from DB
      * @param lookupPermissionOnCache true to pull permissions from cache. false to pull permissions directly from DB
      * @return a JSONArray with identifier info and list of permissions this asset has
