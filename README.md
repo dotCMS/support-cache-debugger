@@ -1,7 +1,7 @@
 
 # README
 ----
-This is an example of how to create and load Jersey Based REST resources in dotCMS via OSGi 
+This is an OSGi Plugin that enables certain REST Endpoints for Troubleshooting purposes
 
 
 ## How to build this example
@@ -36,28 +36,28 @@ Undeploy the bundle using the dotCMS UI (CMS Admin->Dynamic Plugins->Undeploy).
 
 Once installed, you can access this resource by (this assumes you are on localhost)
 
-`http://localhost:8080/api/example`
+`http://localhost:8080/api/supportDebugger/cacheKey/{anyAssetIdentifier}`
 
-or this, which requires an dotcms user to access(See authentication below)
+This will return some basic information of an asset, like
 
-`http://localhost:8080/api/example/auth`
+- Asset Identifier.
+- Permissions Stored in Cache.
 
+`http://localhost:8080/api/supportDebugger/assetId/{anyAssetIdentifier}`
 
-You can try the put and post resources by
+This will return some basic information of an asset, like
 
-`curl -XPUT http://localhost:8080/api/example`
+- Asset Identifier.
+- Permissions Stored directly in DB. In case this asset inherits permissions from a parent permissionable, it will permissions from it instead.
 
-`curl -XPOST http://localhost:8080/api/example`
+`http://localhost:8080/api/supportDebugger/fullReindex/amountOfShards/{amountOfShards}`
 
+This will either kick a full reindex, or return progress of current reindexation. This requires authentication in request headers.
 
+- Asset Identifier.
+- Permissions Stored directly in DB. In case this asset inherits permissions from a parent permissionable, it will permissions from it instead.
 
+You can try running 
 
-## Authentication
-----
-This API supports the same REST auth infrastructure as other 
-rest apis in dotcms. There are 4 ways to authenticate.
+`curl -u admin@dotcms.com:admin -XGET http://localhost:8080/api/supportDebugger/fullReindex/amountOfShards/{amountOfShards}`
 
-* user/xxx/password/yyy in the URI
-* basic http/https authentication (base64 encoded)
-* DOTAUTH header similar to basic auth and base64 encoded, e.g. setHeader("DOTAUTH", base64.encode("admin@dotcms.com:admin"))
-* Session based (form based login) for frontend or backend logged in user
