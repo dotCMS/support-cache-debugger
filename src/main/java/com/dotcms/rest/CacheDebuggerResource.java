@@ -1,5 +1,7 @@
 package com.dotcms.rest;
 
+import com.dotcms.content.elasticsearch.business.ContentletIndexAPI;
+import com.dotcms.content.elasticsearch.util.ESReindexationProcessStatus;
 import com.dotcms.repackage.javax.ws.rs.GET;
 import com.dotcms.repackage.javax.ws.rs.Path;
 import com.dotcms.repackage.javax.ws.rs.PathParam;
@@ -16,13 +18,16 @@ import com.dotmarketing.business.DotStateException;
 import com.dotmarketing.business.PermissionAPI;
 import com.dotmarketing.business.Role;
 import com.dotmarketing.business.RoleAPI;
+import com.dotmarketing.business.UserAPI;
 import com.dotmarketing.business.Versionable;
 import com.dotmarketing.business.VersionableAPI;
 import com.dotmarketing.common.db.DotConnect;
+import com.dotmarketing.db.HibernateUtil;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.portlets.containers.business.ContainerAPI;
 import com.dotmarketing.portlets.containers.model.Container;
+import com.dotmarketing.portlets.contentlet.business.ContentletAPI;
 import com.dotmarketing.portlets.contentlet.business.ContentletCache;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
 import com.dotmarketing.portlets.contentlet.model.ContentletVersionInfo;
@@ -30,6 +35,9 @@ import com.dotmarketing.portlets.languagesmanager.business.LanguageAPI;
 import com.dotmarketing.portlets.languagesmanager.model.Language;
 import com.dotmarketing.portlets.templates.business.TemplateAPI;
 import com.dotmarketing.portlets.templates.model.Template;
+import com.dotmarketing.util.AdminLogger;
+import com.dotmarketing.util.Config;
+import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.json.JSONArray;
 import com.dotmarketing.util.json.JSONException;
 import com.dotmarketing.util.json.JSONObject;
@@ -43,13 +51,18 @@ import javax.servlet.http.HttpServletRequest;
 public class CacheDebuggerResource  {
 
     private final ContainerAPI containerAPI = APILocator.getContainerAPI();
+    private final ContentletAPI contentletAPI = APILocator.getContentletAPI();
+    private ContentletIndexAPI indexAPI = APILocator.getContentletIndexAPI();
     private final LanguageAPI langAPI =  APILocator.getLanguageAPI();
     private final PermissionAPI permAPI = APILocator.getPermissionAPI();
     private final RoleAPI roleAPI = APILocator.getRoleAPI();
     private final TemplateAPI templateAPI =  APILocator.getTemplateAPI();
+    private final UserAPI userAPI = APILocator.getUserAPI();
     private final VersionableAPI versionableAPI =  APILocator.getVersionableAPI();
     private final User sysUser = APILocator.systemUser();
     private final ContentletCache cc = CacheLocator.getContentletCache();
+
+    private final WebResource webResource = new WebResource();
 
     /**
      * This resource is meant to look for a cache Key on different cache regions
@@ -69,6 +82,8 @@ public class CacheDebuggerResource  {
     @Produces({MediaType.APPLICATION_JSON, "application/javascript"})
     public Response loadPermissionsFromCache(@Context HttpServletRequest request, @PathParam("cacheKey") String cacheKey)
             throws DotStateException, DotDataException, DotSecurityException, JSONException {
+
+        InitDataObject initData = webResource.init(null, true, request, false, null);
 
         JSONArray finalOutput;
 
@@ -105,6 +120,8 @@ public class CacheDebuggerResource  {
     public Response loadPermissionsFromDB(@Context HttpServletRequest request, @PathParam("assetId") String assetId)
             throws DotStateException, DotDataException, DotSecurityException, JSONException {
 
+        InitDataObject initData = webResource.init(null, true, request, false, null);
+
         JSONArray finalOutput;
 
         //Retrieve info from DB.
@@ -119,6 +136,64 @@ public class CacheDebuggerResource  {
         }
         String username = (sysUser != null) ? sysUser.getFullName() : " unknown ";
         ResponseBuilder builder = Response.ok("{\"result\":\"/test/" + username + " GET!\"}", "application/json");
+        return builder.build();
+    }
+
+    /**
+     * This resource will kick a full reindex given an amount of shards
+     * If amount of shards is set to zero, it will fallback to value as specified in config
+     * If a Full Reindex is already running, it will show its progress instead
+     *
+     * @param request
+     * @param amountOfShards amount of Shards for the newly created ES Index
+     * @return
+     * @throws DotStateException
+     * @throws DotDataException
+     * @throws DotSecurityException
+     */
+    @GET
+    @JSONP
+    @Path("/fullReindex/amountOfShards/{amountOfShards}")
+    @Produces({MediaType.APPLICATION_JSON, "application/javascript"})
+    public Response runFullReindex(@Context HttpServletRequest request, @PathParam("amountOfShards") int amountOfShards)
+            throws DotStateException, DotDataException, JSONException {
+
+        InitDataObject initData = webResource.init(null, true, request, true, null);
+
+        User user = initData.getUser();
+
+        JSONObject finalOutput = new JSONObject();
+
+        if(user != null && userAPI.isCMSAdmin(user)){
+
+            if(amountOfShards == 0) {
+                amountOfShards = Config.getIntProperty("es.index.number_of_shards", 2);
+            }
+
+            if(indexAPI.isInFullReindex()) {
+                Map<String, Object> progressStats = ESReindexationProcessStatus.getProcessIndexationMap();
+                finalOutput.append("IsReindexRunning", "yes");
+                finalOutput.append("ContentCountToIndex",progressStats.get("contentCountToIndex"));
+                finalOutput.append("LastIndexationProgress",progressStats.get("lastIndexationProgress"));
+                finalOutput.append("CurrentIndexPath",progressStats.get("currentIndexPath"));
+                finalOutput.append("NewIndexPath",progressStats.get("newIndexPath"));
+            } else {
+                Logger.info(this, "Running Contentlet Reindex.");
+                finalOutput.append("IsReindexRunning", "No. It has been triggered. Please review log files");
+                finalOutput.append("AmountOfShards", amountOfShards);
+                HibernateUtil.startTransaction();
+                contentletAPI.reindex();
+                HibernateUtil.closeAndCommitTransaction();
+                AdminLogger.log(CacheDebuggerResource.class, "runFullReindex", "Running Contentlet Reindex");
+            }
+
+            ResponseBuilder builder = Response.ok(finalOutput.toString(4), "application/json");
+            return builder.build();
+        }
+
+        finalOutput.append("Nothing to see here", "exactly");
+        finalOutput.append("Why?", "You need to be a CMS Admin User");
+        ResponseBuilder builder = Response.ok(finalOutput.toString(4), "application/json");
         return builder.build();
     }
 

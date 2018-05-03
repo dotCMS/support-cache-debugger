@@ -1,0 +1,8 @@
+Manifest-Version: 1.0
+Bundle-Description: dotCMS - Rest Endpoint example
+Bundle-Activator: com.dotcms.plugin.rest.Activator
+Bundle-Vendor: dotCMS
+Bundle-DocURL: https://dotcms.com/
+Import-Package: *;version=0
+DynamicImport-Package: *
+
