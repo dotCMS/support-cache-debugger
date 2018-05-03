@@ -44,12 +44,12 @@ public class CacheDebuggerResource  {
 
     private final ContainerAPI containerAPI = APILocator.getContainerAPI();
     private final LanguageAPI langAPI =  APILocator.getLanguageAPI();
-    private PermissionAPI permAPI = APILocator.getPermissionAPI();
-    private RoleAPI roleAPI = APILocator.getRoleAPI();
+    private final PermissionAPI permAPI = APILocator.getPermissionAPI();
+    private final RoleAPI roleAPI = APILocator.getRoleAPI();
     private final TemplateAPI templateAPI =  APILocator.getTemplateAPI();
     private final VersionableAPI versionableAPI =  APILocator.getVersionableAPI();
     private final User sysUser = APILocator.systemUser();
-    private ContentletCache cc = CacheLocator.getContentletCache();
+    private final ContentletCache cc = CacheLocator.getContentletCache();
 
     /**
      * This resource is meant to look for a cache Key on different cache regions
@@ -73,7 +73,7 @@ public class CacheDebuggerResource  {
         JSONArray finalOutput;
 
         //Retrieve info from DB.
-        List<Map<String, String>> occurrenceInIdentifierTable = findIdentiferObjectInDB(cacheKey);
+        List<Map<String, String>> occurrenceInIdentifierTable = findIdentifierObjectInDB(cacheKey);
         if (occurrenceInIdentifierTable != null && occurrenceInIdentifierTable.size() > 0) {
 
             finalOutput = generateJSONOutput(occurrenceInIdentifierTable, true);
@@ -108,7 +108,7 @@ public class CacheDebuggerResource  {
         JSONArray finalOutput;
 
         //Retrieve info from DB.
-        List<Map<String, String>> occurrenceInIdentifierTable = findIdentiferObjectInDB(assetId);
+        List<Map<String, String>> occurrenceInIdentifierTable = findIdentifierObjectInDB(assetId);
         if (occurrenceInIdentifierTable != null && occurrenceInIdentifierTable.size() > 0) {
 
             finalOutput = generateJSONOutput(occurrenceInIdentifierTable, false);
@@ -122,6 +122,13 @@ public class CacheDebuggerResource  {
         return builder.build();
     }
 
+
+    /**
+     * Generats the JSONArray which is going to be returned by the REST endpoints
+     * @param occurrenceInIdentifierTable The asset id pulled from DB
+     * @param lookupPermissionOnCache true to pull permissions from cache. false to pull permissions directly from DB
+     * @return a JSONArray with identifier info and list of permissions this asset has
+     */
     private JSONArray generateJSONOutput(List<Map<String, String>> occurrenceInIdentifierTable, boolean lookupPermissionOnCache)
             throws DotDataException, JSONException, DotSecurityException {
 
@@ -217,7 +224,7 @@ public class CacheDebuggerResource  {
      * @param id The asset id
      * @return The object pulled from DB
      */
-    private List<Map<String, String>> findIdentiferObjectInDB (String id) throws DotDataException {
+    private List<Map<String, String>> findIdentifierObjectInDB (String id) throws DotDataException {
         DotConnect dc = new DotConnect();
         dc.setSQL("SELECT * FROM identifier WHERE id = ?");
         dc.addParam(id);
@@ -225,7 +232,7 @@ public class CacheDebuggerResource  {
     }
 
     /**
-     * Retrieve the Permssion Object from DB
+     * Retrieve the Permission Object from DB
      * This is useful for looking at permissions for contents with individual permissions
      * @param id The asset id
      * @return The object pulled from DB
