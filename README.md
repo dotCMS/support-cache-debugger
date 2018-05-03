@@ -43,6 +43,8 @@ This will return some basic information of an asset, like
 - Asset Identifier.
 - Permissions Stored in Cache.
 
+--
+
 `http://localhost:8080/api/supportDebugger/assetId/{anyAssetIdentifier}`
 
 This will return some basic information of an asset, like
@@ -50,11 +52,21 @@ This will return some basic information of an asset, like
 - Asset Identifier.
 - Permissions Stored directly in DB. In case this asset inherits permissions from a parent permissionable, it will return permissions from it instead.
 
+--
+
 `http://localhost:8080/api/supportDebugger/fullReindex/amountOfShards/{amountOfShards}`
 
-This will either kick a full reindex, or return progress of current reindexation. This requires authentication in request headers.
+This will either kick a full reindex, or return progress of current reindexation. This requires authentication in request headers and user passed in must be a CMS Administrator.
 
 You can try running via curl command:
 
 `curl -u admin@dotcms.com:admin -XGET http://localhost:8080/api/supportDebugger/fullReindex/amountOfShards/{amountOfShards}`
+
+--
+
+`http://localhost:8080/api/supportDebugger/clearCache/{cacheRegion}`
+
+This will flush cache of a specific cache region, if exists (case sensitive). If {cacheRegion} equals "all", it will flush all caches. This requires authentication in request headers and user passed in must be a CMS Administrator.
+
+List of Cache Regions are located in CacheLocator class.
 

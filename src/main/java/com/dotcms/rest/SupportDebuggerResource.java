@@ -13,6 +13,7 @@ import com.dotcms.repackage.javax.ws.rs.core.Response.ResponseBuilder;
 import com.dotcms.repackage.org.glassfish.jersey.server.JSONP;
 import com.dotmarketing.beans.Permission;
 import com.dotmarketing.business.APILocator;
+import com.dotmarketing.business.Cachable;
 import com.dotmarketing.business.CacheLocator;
 import com.dotmarketing.business.DotStateException;
 import com.dotmarketing.business.PermissionAPI;
@@ -38,6 +39,7 @@ import com.dotmarketing.portlets.templates.model.Template;
 import com.dotmarketing.util.AdminLogger;
 import com.dotmarketing.util.Config;
 import com.dotmarketing.util.Logger;
+import com.dotmarketing.util.MaintenanceUtil;
 import com.dotmarketing.util.json.JSONArray;
 import com.dotmarketing.util.json.JSONException;
 import com.dotmarketing.util.json.JSONObject;
@@ -105,6 +107,7 @@ public class SupportDebuggerResource  {
         return builder.build();
     }
 
+
     /**
      * This resource is meant to look for permissions in DB
      * if a match is found, it will return its information
@@ -146,9 +149,72 @@ public class SupportDebuggerResource  {
     }
 
     /**
+     * This resource will flush cache given a specific region
+     * if "all" is passed in, it will flush all cache regions.
+     * Requires Authentication and CMS Administrator role
+     *
+     * @param request
+     * @param cacheRegion Name of Cache Region
+     * @return
+     * @throws DotStateException
+     * @throws DotDataException
+     * @throws DotSecurityException
+     * @see CacheLocator#getCacheIndexes()
+     */
+    @GET
+    @JSONP
+    @Path("/clearCache/{cacheRegion}")
+    @Produces({MediaType.APPLICATION_JSON, "application/javascript"})
+    public Response clearCacheRegion(@Context HttpServletRequest request, @PathParam("cacheRegion") String cacheRegion)
+            throws DotStateException, DotDataException, JSONException {
+
+        InitDataObject initData = webResource.init(null, true, request, true, null);
+
+        User user = initData.getUser();
+
+        JSONObject finalOutput = new JSONObject();
+
+        Cachable cacheRegionObj = null;
+
+        if(user != null && userAPI.isCMSAdmin(user)){
+            try{
+                if ("null".equalsIgnoreCase(cacheRegion) || "all".equalsIgnoreCase(cacheRegion)){
+                    cacheRegion = "All";
+                    MaintenanceUtil.flushCache();
+
+                } else {
+                    cacheRegionObj = CacheLocator.getCache(cacheRegion);
+                    if(cacheRegionObj != null) {
+                        cacheRegionObj.clearCache();
+                    }
+                }
+            } catch (Exception e){
+                Logger.error(this, "There was a problem clearing caches: " + e.getMessage());
+            }
+
+            finalOutput.append("FlushCacheCall","requested");
+
+            if(cacheRegionObj != null || "all".equalsIgnoreCase(cacheRegion)) {
+                finalOutput.append("RegionsCleared",cacheRegion);
+            } else {
+                finalOutput.append("RegionsCleared","None. Cache Region does not exist.");
+            }
+
+            ResponseBuilder builder = Response.ok(finalOutput.toString(4), "application/json");
+            return builder.build();
+        }
+
+        finalOutput.append("Nothing to see here", "exactly");
+        finalOutput.append("Why?", "You need to be a CMS Admin User");
+        ResponseBuilder builder = Response.ok(finalOutput.toString(4), "application/json");
+        return builder.build();
+    }
+
+    /**
      * This resource will kick a full reindex given an amount of shards
      * If amount of shards is set to zero, it will fallback to value as specified in config
      * If a Full Reindex is already running, it will show its progress instead
+     * Requires Authentication and CMS Administrator role
      *
      * @param request
      * @param amountOfShards amount of Shards for the newly created ES Index
@@ -300,6 +366,7 @@ public class SupportDebuggerResource  {
 
     }
 
+
     /**
      * Retrieve the Identifier Object from DB
      * @param id The asset id
@@ -324,6 +391,7 @@ public class SupportDebuggerResource  {
         dc.addParam(id);
         return dc.loadResults();
     }
+
 
     /**
      * Retrieve the Parent Permissions of an Object on DB, given a child asset identifier
