@@ -123,7 +123,7 @@ public class SupportDebuggerResource  {
      */
     @GET
     @JSONP
-    @Path("/assetId/{assetId}")
+    @Path("/assetId/{assetId}/languageId/{langId}")
     @Produces({MediaType.APPLICATION_JSON, "application/javascript"})
     public Response loadPermissionsFromDB(@Context HttpServletRequest request,
             @PathParam("assetId") String assetId,
