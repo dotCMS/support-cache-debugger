@@ -70,3 +70,7 @@ This will flush cache of a specific cache region, if exists (case sensitive). If
 
 List of Cache Regions are located in CacheLocator class.
 
+You can try running via curl command:
+
+`curl -u admin@dotcms.com:admin -XGET http://localhost:8080/api/supportDebugger/clearCache/{cacheRegion}`
+
