@@ -80,9 +80,11 @@ public class SupportDebuggerResource  {
      */
     @GET
     @JSONP
-    @Path("/cacheKey/{cacheKey}")
+    @Path("/cacheKey/{cacheKey}/languageId/{langId}")
     @Produces({MediaType.APPLICATION_JSON, "application/javascript"})
-    public Response loadPermissionsFromCache(@Context HttpServletRequest request, @PathParam("cacheKey") String cacheKey)
+    public Response loadPermissionsFromCache(@Context HttpServletRequest request,
+            @PathParam("cacheKey") String cacheKey,
+            @PathParam("langId") long langId)
             throws DotStateException, DotDataException, DotSecurityException, JSONException {
 
         InitDataObject initData = webResource.init(null, true, request, false, null);
@@ -93,7 +95,7 @@ public class SupportDebuggerResource  {
         List<Map<String, String>> occurrenceInIdentifierTable = findIdentifierObjectInDB(cacheKey);
         if (occurrenceInIdentifierTable != null && occurrenceInIdentifierTable.size() > 0) {
 
-            finalOutput = generateJSONOutput(occurrenceInIdentifierTable, true);
+            finalOutput = generateJSONOutput(occurrenceInIdentifierTable, langId, true);
 
             ResponseBuilder builder = Response.ok(finalOutput.toString(4), "application/json");
             return builder.build();
@@ -123,7 +125,9 @@ public class SupportDebuggerResource  {
     @JSONP
     @Path("/assetId/{assetId}")
     @Produces({MediaType.APPLICATION_JSON, "application/javascript"})
-    public Response loadPermissionsFromDB(@Context HttpServletRequest request, @PathParam("assetId") String assetId)
+    public Response loadPermissionsFromDB(@Context HttpServletRequest request,
+            @PathParam("assetId") String assetId,
+            @PathParam("langId") long langId)
             throws DotStateException, DotDataException, DotSecurityException, JSONException {
 
         InitDataObject initData = webResource.init(null, true, request, false, null);
@@ -134,7 +138,7 @@ public class SupportDebuggerResource  {
         List<Map<String, String>> occurrenceInIdentifierTable = findIdentifierObjectInDB(assetId);
         if (occurrenceInIdentifierTable != null && occurrenceInIdentifierTable.size() > 0) {
 
-            finalOutput = generateJSONOutput(occurrenceInIdentifierTable, false);
+            finalOutput = generateJSONOutput(occurrenceInIdentifierTable, langId, false);
 
             ResponseBuilder builder = Response.ok(finalOutput.toString(4), "application/json");
             return builder.build();
@@ -276,13 +280,21 @@ public class SupportDebuggerResource  {
      * @param lookupPermissionOnCache true to pull permissions from cache. false to pull permissions directly from DB
      * @return a JSONArray with identifier info and list of permissions this asset has
      */
-    private JSONArray generateJSONOutput(List<Map<String, String>> occurrenceInIdentifierTable, boolean lookupPermissionOnCache)
+    private JSONArray generateJSONOutput(List<Map<String, String>> occurrenceInIdentifierTable, long langId, boolean lookupPermissionOnCache)
             throws DotDataException, JSONException, DotSecurityException {
 
         ContentletVersionInfo conVerInfo;
         Versionable assetVersion;
         List<Permission> permissionList = new ArrayList<>();
-        Language defaultLang = langAPI.getDefaultLanguage();
+        Language assetLang;
+        if(langId <= 0) {
+            assetLang = langAPI.getDefaultLanguage();
+        } else {
+            assetLang = langAPI.getLanguage(langId);
+            if(assetLang == null) {
+                assetLang = langAPI.getDefaultLanguage();
+            }
+        }
 
         JSONArray output = new JSONArray();
         JSONObject generatedOutput = new JSONObject();
@@ -306,11 +318,21 @@ public class SupportDebuggerResource  {
 
             //Depending on asset type, we retrieve its Versionable Info using the default language
             if("contentlet".equalsIgnoreCase(assetType)){
-                conVerInfo = versionableAPI.getContentletVersionInfo(id,defaultLang.getId());
+                conVerInfo = versionableAPI.getContentletVersionInfo(id,assetLang.getId());
 
-                Contentlet cachedContent = cc.get(conVerInfo.getWorkingInode());
-
-                permissionList = permAPI.getPermissions(cachedContent);
+                if (conVerInfo != null) {
+                    generatedOutput = new JSONObject();
+                    generatedOutput.append("WorkingVersionGivenLanguage","Found");
+                    generatedOutput.append("LanguageId",conVerInfo.getLang());
+                    output.add(generatedOutput);
+                    Contentlet cachedContent = cc.get(conVerInfo.getWorkingInode());
+                    permissionList = permAPI.getPermissions(cachedContent);
+                } else {
+                    //No Working version for content.
+                    generatedOutput = new JSONObject();
+                    generatedOutput.append("WorkingVersionGivenLanguage","Not Found");
+                    output.add(generatedOutput);
+                }
 
             } else if (!"folder".equalsIgnoreCase(assetType)){
                 assetVersion = versionableAPI.findWorkingVersion(id,sysUser,false);
@@ -334,7 +356,7 @@ public class SupportDebuggerResource  {
 
                 generatedOutput = new JSONObject();
                 generatedOutput.append(i + "_PermissionableIdFromCache",p.getInode());
-                generatedOutput.append(i + "PermissionableTypeFromCache",p.getClass().getName());
+                generatedOutput.append(i + "_PermissionableTypeFromCache",p.getClass().getName());
                 generatedOutput.append(i + "_Role/UserFromCache",roleAPI.loadRoleById(p.getRoleId()).getName());
                 generatedOutput.append(i +"_PermissionLevelFromCache",p.getPermission());
                 output.add(generatedOutput);
@@ -354,7 +376,7 @@ public class SupportDebuggerResource  {
                     generatedOutput = new JSONObject();
                     Role permissionRole = roleAPI.loadRoleById( permissionFromDB.get(k).get("roleid"));
                     generatedOutput.append(k + "_PermissionableIdFromDB", permissionFromDB.get(k).get("inode_id"));
-                    generatedOutput.append(k + "PermissionableTypeFromDB", permissionFromDB.get(k).get("permission_type"));
+                    generatedOutput.append(k + "_PermissionableTypeFromDB", permissionFromDB.get(k).get("permission_type"));
                     generatedOutput.append(k + "_Role/UserFromDB", permissionRole.getName());
                     generatedOutput.append(k +"_PermissionLevelFromDB", permissionFromDB.get(k).get("permission"));
                     output.add(generatedOutput);
