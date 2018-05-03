@@ -36,7 +36,7 @@ Undeploy the bundle using the dotCMS UI (CMS Admin->Dynamic Plugins->Undeploy).
 
 Once installed, you can access this resource by (this assumes you are on localhost)
 
-`http://localhost:8080/api/supportDebugger/cacheKey/{anyAssetIdentifier}`
+`http://localhost:8080/api/supportDebugger/cacheKey/{anyAssetIdentifier}/languageId/{languageId}`
 
 This will return some basic information of an asset, like
 
@@ -45,7 +45,7 @@ This will return some basic information of an asset, like
 
 --
 
-`http://localhost:8080/api/supportDebugger/assetId/{anyAssetIdentifier}`
+`http://localhost:8080/api/supportDebugger/assetId/{anyAssetIdentifier}/languageId/{languageId}`
 
 This will return some basic information of an asset, like
 
