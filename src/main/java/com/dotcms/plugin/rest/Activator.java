@@ -1,7 +1,7 @@
 package com.dotcms.plugin.rest;
 
 import org.osgi.framework.BundleContext;
-import com.dotcms.rest.CacheDebuggerResource;
+import com.dotcms.rest.SupportDebuggerResource;
 import com.dotcms.rest.config.RestServiceUtil;
 import com.dotmarketing.osgi.GenericBundleActivator;
 import com.dotcms.repackage.org.apache.logging.log4j.LogManager;
@@ -11,7 +11,7 @@ import com.dotmarketing.util.Logger;
 
 public class Activator extends GenericBundleActivator {
 
-	Class clazz = CacheDebuggerResource.class;
+	Class clazz = SupportDebuggerResource.class;
 
     private LoggerContext pluginLoggerContext;
 
