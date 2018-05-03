@@ -48,7 +48,7 @@ This will return some basic information of an asset, like
 This will return some basic information of an asset, like
 
 - Asset Identifier.
-- Permissions Stored directly in DB. In case this asset inherits permissions from a parent permissionable, it will permissions from it instead.
+- Permissions Stored directly in DB. In case this asset inherits permissions from a parent permissionable, it will return permissions from it instead.
 
 `http://localhost:8080/api/supportDebugger/fullReindex/amountOfShards/{amountOfShards}`
 
